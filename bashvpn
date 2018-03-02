@@ -1,13 +1,11 @@
 #!/bin/bash
-_country='US'
-echo '[bashvpn] getting server list'
-curl -s http://www.vpngate.net/api/iphone/ > /tmp/bashvpn.tmp
-if echo "$1" | grep -q '^[A-Z][A-Z]$'; then
-	echo "[bashvpn] selected $1"
-	_country="$1"
-else
-	echo '[bashvpn] selected US'
-fi
-awk -F, '$7~/'$_country'/{print$NF}' /tmp/bashvpn.tmp | base64 -d > /tmp/bashvpn.current.tmp
-echo '[bashvpn] powering on OpenVPN with sudo'
-sudo openvpn /tmp/bashvpn.current.tmp
+Country='US'
+echo -n '[bashvpn] Fetching server list... '
+List="$(curl -s http://www.vpngate.net/api/iphone/)"
+echo -ne 'done\n[bashvpn] Selected country '
+grep -q '^[A-Z][A-Z]$' <<< $1 && Country="$1"
+echo $Country
+awk -F, '$7~/'$Country'/{print$NF}' <<< "$List" | base64 -d > /tmp/bashvpn.tmp 2>/dev/null
+[ ! -s /tmp/bashvpn.tmp ] && echo "[bashvpn] No VPN in country ${1}. Exiting..." && exit
+echo '[bashvpn] Powering on OpenVPN with sudo'
+sudo openvpn /tmp/bashvpn.tmp
